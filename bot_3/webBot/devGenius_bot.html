@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>devGenius Bot - Anime Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      padding: 10px 15px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .anime-info {
+      margin-top: 20px;
+    }
+
+    .anime-info img {
+      max-width: 100%;
+      border-radius: 5px;
+    }
+
+    .anime-info p {
+      text-align: left;
+      color: #555;
+    }
+
+    .error-message {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>devGenius Bot - Anime Search</h1>
+    <input type="text" id="animeSearch" placeholder="Enter anime name..." />
+    <button onclick="searchAnime()">Search Anime</button>
+
+    <div class="anime-info" id="animeInfo"></div>
+    <p id="errorMessage" class="error-message"></p>
+  </div>
+
+  <script>
+    async function searchAnime() {
+      const searchValue = document.getElementById("animeSearch").value.trim().toLowerCase();
+      const errorMessage = document.getElementById("errorMessage");
+      const animeInfo = document.getElementById("animeInfo");
+
+      // Clear previous results and error message
+      animeInfo.innerHTML = '';
+      errorMessage.textContent = '';
+
+      if (!searchValue) {
+        errorMessage.textContent = "Please enter an anime name.";
+        return;
+      }
+
+      const url = `https://api.jikan.moe/v4/anime?q=${searchValue}`;
+      
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.data && data.data.length > 0) {
+          const anime = data.data[0];
+          const title = anime.title;
+          const imgUrl = anime.images.jpg.large_image_url;
+          const synopsis = anime.synopsis;
+          const releaseDate = anime.aired ? anime.aired.string : 'Release date not available';
+          const airingStatus = anime.airing ? 'Airing' : 'Finished';
+          const producers = anime.producers.map(producer => producer.name).join(', ');
+          const genres = anime.genres.map(genre => genre.name).join(', ');
+          const trailerUrl = anime.trailer ? anime.trailer.embed_url : null;
+
+          animeInfo.innerHTML = `
+            <h2>${title}</h2>
+            <img src="${imgUrl}" alt="${title}" />
+            <p><strong>Synopsis:</strong> ${synopsis.slice(0, 200)}...</p>
+            <p><strong>Release Date:</strong> ${releaseDate}</p>
+            <p><strong>Airing Status:</strong> ${airingStatus}</p>
+            <p><strong>Producers:</strong> ${producers}</p>
+            <p><strong>Genres:</strong> ${genres}</p>
+          `;
+
+          if (trailerUrl) {
+            animeInfo.innerHTML += `<p><strong>Trailer:</strong> <a href="${trailerUrl}" target="_blank">Watch Trailer</a></p>`;
+          } else {
+            animeInfo.innerHTML += `<p>No trailer available.</p>`;
+          }
+        } else {
+          errorMessage.textContent = "No anime found with that name.";
+        }
+      } catch (error) {
+        errorMessage.textContent = "There was an error fetching the anime data.";
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>
