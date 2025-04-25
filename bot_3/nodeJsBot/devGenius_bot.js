@@ -1,74 +1,45 @@
+require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 
-// Replace with your actual token from BotFather
-const token = 'YOUR_TOKEN';
+const telegramToken = process.env.TELEGRAM_TOKEN;
+const geminiApiKey = process.env.GEMINI_API_KEY;
 
-// Create a new Telegram bot instance
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(telegramToken, { polling: true });
 
-// Function to fetch anime data from the Jikan API
-async function fetchAnimeData(query) {
-  const url = `https://api.jikan.moe/v4/anime?q=${query}`;
+async function getGeminiResponse(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+  const body = {
+    contents: [{ parts: [{ text: prompt }] }]
+  };
+  const headers = {
+    'Content-Type': 'application/json'
+  };
 
   try {
-    const response = await axios.get(url);
-    const anime = response.data.data[0];
-
-    if (anime) {
-      const title = anime.title;
-      const imgUrl = anime.images.jpg.large_image_url;
-      const synopsis = anime.synopsis;
-      const releaseDate = anime.aired ? anime.aired.string : 'Release date not available';
-      const airingStatus = anime.airing ? 'Airing' : 'Finished';
-      const producers = anime.producers.map(producer => producer.name).join(', ');
-      const genres = anime.genres.map(genre => genre.name).join(', ');
-      const trailerUrl = anime.trailer ? anime.trailer.embed_url : null;
-
-      return { title, imgUrl, synopsis, releaseDate, airingStatus, producers, genres, trailerUrl };
-    }
+    const response = await axios.post(url, body, { headers });
+    const text = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+    return text || "No response from Gemini.";
   } catch (error) {
-    console.error(error);
+    console.error("Error with Gemini API:", error);
+    return "Sorry, I am unable to generate a response at the moment.";
   }
-
-  return null;
 }
 
-// Handle /start command
-bot.onText(/\/start/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, "Welcome! Send me the name of an anime, and I will show you information about it.");
-});
-
-// Handle user messages (anime search)
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
-  const searchValue = msg.text.trim().toLowerCase();
+  const userInput = msg.text;
 
-  if (searchValue === '/start') return;
+  const reply = await getGeminiResponse(userInput);
 
-  if (!searchValue) {
-    bot.sendMessage(chatId, "Please provide an anime name.");
-    return;
-  }
-
-  const animeData = await fetchAnimeData(searchValue);
-
-  if (animeData) {
-    bot.sendMessage(chatId, `Anime: ${animeData.title}\n\n${animeData.synopsis.slice(0, 200)}...`);
-    bot.sendPhoto(chatId, animeData.imgUrl);
-    bot.sendMessage(chatId, `Release Date: ${animeData.releaseDate}`);
-    bot.sendMessage(chatId, `Airing Status: ${animeData.airingStatus}`);
-    bot.sendMessage(chatId, `Producers: ${animeData.producers}`);
-    bot.sendMessage(chatId, `Genres: ${animeData.genres}`);
-
-    if (animeData.trailerUrl) {
-      bot.sendMessage(chatId, `Trailer: ${animeData.trailerUrl}`);
-      bot.sendVideo(chatId, animeData.trailerUrl);
-    } else {
-      bot.sendMessage(chatId, "No trailer available.");
-    }
+  //start the new code
+  const MAX_LENGTH = 4096;
+  if (reply.length <= MAX_LENGTH) {
+    bot.sendMessage(chatId, reply);
   } else {
-    bot.sendMessage(chatId, "No anime found with that name.");
+    for (let i = 0; i < reply.length; i += MAX_LENGTH) {
+      bot.sendMessage(chatId, reply.substring(i, i + MAX_LENGTH));
+    }
   }
+  //end the new code
 });

@@ -1,6 +1,4 @@
-Sure! Below is an expanded list of **Free APIs** categorized for various purposes, along with a **README** template you can use to document your API collection. Let’s dive in!
 
----
 
 ## 📌 **List of Free APIs**
 
@@ -150,7 +148,3 @@ Feel free to add more APIs to this list! Submit a pull request or open an issue.
 ## License
 This project is open-source and available under the [MIT License](LICENSE).
 ```
-
----
-
-Let me know if you need further assistance! 🚀
