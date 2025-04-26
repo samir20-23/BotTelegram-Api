@@ -1,6 +1,5 @@
-
-
-## 📌 **List of Free APIs**
+| **Jikan API** | Get anime details from MyAnimeList. | `https://api.jikan.moe/v4/anime?limit=4&order_by=score&sort=desc` |
+ 
 
 ### **General APIs**
 | API | Description | Example Endpoint |
